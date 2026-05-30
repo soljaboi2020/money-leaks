@@ -25,6 +25,20 @@
   (`ml_cat_hist` in localStorage). Gemini voice tuned to "calm, observant, no emojis." All files
   CRLF (Rule #2).
 
+- **2026-05-30** — **Polish pass (yellow items from the redesign brief).** Stayed in the editorial
+  lane — explicitly rejected the "neon glow / glassmorphism / icons-per-row" red items from the
+  brief because they conflict with the original editorial direction Malachi committed to. Added:
+  (a) **category pill badges** on leak cards — low-opacity tint of the severity color + same color
+  text, tiny + bold + pill-shaped (subtle, not rainbow blocks); (b) **AI mode status pill** on the
+  "Your money story" header; (c) **micro-hover lift** on leak cards (translateY -1px + brighter bg);
+  (d) **quiet hovers** on subscription + merchant rows (color-only); (e) **focus states** extended
+  to mapper-grid selects and the income-period select; (f) **skeleton states** for the four lower
+  grids (leak cards, categories, subscriptions, merchants) — pulse-only via opacity (no shimmer
+  sweep, which is the "AI template smell"), 420ms display before real content lands; (g) **editorial
+  empty states** for leak-cards (when no leaks surface) and subscriptions (when none detected) —
+  dashed hairline frame, single muted glyph, italic serif title, restrained prose ("Nothing
+  surfaced." / "No clear patterns this period."). Header reveal still feels instant — the big total
+  count-up is the moment, the lists do the brief editorial pause. All CRLF (Rule #2).
 - **2026-05-21** — **Landing polish + dashboard UI pass.** Added a real nav (droplet logo mark +
   wordmark; links: How it works / Sample / Settings — auth/pricing/history deliberately deferred,
   see note below). Income input wrapped in a contained tool-card. Upload zone became a raised card
@@ -70,9 +84,19 @@
 - App is **fully functional with no key** (offline template insights). AI is pure polish.
 
 ## 🚀 Deploy (Rule #5 flow)
-- Intended: GitHub repo under `soljaboi2020` → Vercel GitHub integration → auto-deploy on push to `main`. Static site, no env vars needed (key is client-side BYO).
+- ✅ **2026-05-30 — Repo created + pushed:** https://github.com/soljaboi2020/money-leaks (public).
+  Created via `gh repo create` (gh CLI already auth'd as soljaboi2020, `repo` scope). Container had
+  no SSH host key for github.com, so first push used HTTPS with `gh auth token` inline (token NOT
+  stored in remote URL — one-shot for the initial push). Local git identity set via
+  `git config --local` (per master rule: never touch global git config).
+- ⏳ **Vercel import — needs Malachi.** Vercel can't auto-import a new repo without his OAuth
+  approval. He goes to https://vercel.com/new → import `soljaboi2020/money-leaks` → leave all
+  defaults (Other framework, no build cmd, output dir `./`) → Deploy. After that, every push to
+  `main` auto-deploys (Rule #5). Default URL: `money-leaks-<hash>.vercel.app` or `money-leaks.vercel.app`.
+- ⚠️ Future Claude pushes need the same inline-token pattern (`gh auth setup-git` can't persist to
+  `/root/.gitconfig` — "Device or resource busy"). Use:
+  `TOKEN=$(gh auth token); git push "https://x-access-token:${TOKEN}@github.com/soljaboi2020/money-leaks.git" main; unset TOKEN`
 - `vercel.json` mirrors ebay project (cleanUrls + security headers).
-- **NOT yet created on GitHub / deployed.** `gh` auth was unresolved last session (see SESSION-NOTES).
 
 ## ✅ Done (Phase 1 + bits of 2/3)
 Frictionless CSV onboarding · column auto-detect + manual mapper · the reveal (big total, count-up) · salary→work-hours framing · category chart + bars · merchant intelligence · subscription detector · money-leaks engine · month-over-month delta · emotional insights (offline + Gemini) · roast mode · shareable card · demo data.

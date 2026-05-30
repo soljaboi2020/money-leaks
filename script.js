@@ -272,6 +272,7 @@ function renderResults() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   const m = MODEL;
 
+  // header info populates instantly — the big number IS the reveal moment
   $('revealPeriod').textContent = m.period;
   countUp($('bigTotal'), m.total);
 
@@ -284,16 +285,48 @@ function renderResults() {
     delta.textContent = `${m.txnCount} transactions`;
     delta.className = 'delta';
   }
-
   $('headlineInsight').textContent = headline(m);
   renderTrend(m.dailySeries);
-  renderLeakCards(m.leakCards);
-  renderCatList(m.cats, m.total);
-  renderSubs(m.subs, m.subMonthly);
-  renderMerchants(m.merchants);
 
-  renderInsights(offlineInsights(m), 'offline');
-  if (getKey()) generateAIInsights('insights');
+  // skeleton phase for the 4 lower grids, then populate after a beat.
+  // The brief pulse signals "the forensic pass is running" — editorial loading.
+  showSkeletons();
+  setTimeout(() => {
+    renderLeakCards(m.leakCards);
+    renderCatList(m.cats, m.total);
+    renderSubs(m.subs, m.subMonthly);
+    renderMerchants(m.merchants);
+    renderInsights(offlineInsights(m), 'offline');
+    if (getKey()) generateAIInsights('insights');
+  }, 420);
+}
+
+// editorial skeleton scaffolds — pulsing hairline shapes, no shimmer sweep
+function showSkeletons() {
+  $('leakCards').classList.remove('is-empty');
+  $('leakCards').innerHTML = Array.from({length: 4}).map(() => `
+    <div class="leak leak-skel">
+      <div class="skel sk-cat"></div>
+      <div class="skel sk-amt"></div>
+      <div class="skel sk-line"></div>
+      <div class="skel sk-line short"></div>
+    </div>`).join('');
+  $('catList').innerHTML = Array.from({length: 5}).map(() => `
+    <div class="skel-cat">
+      <div class="skel sk-name"></div>
+      <div class="skel sk-amt"></div>
+      <div class="skel sk-track"></div>
+    </div>`).join('');
+  $('subList').innerHTML = Array.from({length: 3}).map(() => `
+    <div class="skel-row">
+      <div class="skel sk-name"></div>
+      <div class="skel sk-amt"></div>
+    </div>`).join('');
+  $('merchantList').innerHTML = Array.from({length: 6}).map(() => `
+    <div class="skel-row">
+      <div class="skel sk-name"></div>
+      <div class="skel sk-amt"></div>
+    </div>`).join('');
 }
 
 function headline(m) {
@@ -344,7 +377,21 @@ function renderTrend(series) {
 }
 
 function renderLeakCards(cards) {
-  $('leakCards').innerHTML = cards.map(c => {
+  const el = $('leakCards');
+  if (!cards || !cards.length) {
+    // editorial empty state — calm, observant, no exclamation marks
+    el.classList.add('is-empty');
+    el.innerHTML = `
+      <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true" style="margin:0 auto var(--s-2)">
+        <path d="M4 12h16M4 12l4-4M4 12l4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.25" opacity=".25"/>
+      </svg>
+      <p class="empty-title">Nothing surfaced.</p>
+      <p class="empty-copy">No clear patterns this period. Either the spending was disciplined, or the statement is too short to read a story.</p>`;
+    return;
+  }
+  el.classList.remove('is-empty');
+  el.innerHTML = cards.map(c => {
     const chg = c.pct == null ? '' :
       `<span class="chg ${c.pct >= 0 ? 'up':'down'}">${c.pct >= 0 ? '↑':'↓'} ${Math.abs(c.pct)}% vs last month</span>`;
     const hrs = c.hours != null
@@ -381,9 +428,19 @@ function renderCatList(cats, total) {
 
 function renderSubs(subs, monthly) {
   $('subTotal').textContent = subs.length ? `${fmt(monthly)}/mo · ${fmt(monthly*12)}/yr` : 'None detected';
-  $('subList').innerHTML = subs.length ? subs.map(s => `
-    <div class="sub-row"><span>${s.name}</span>${s.count>1?`<span class="ct">×${s.count}</span>`:''}<span class="amt num">${fmt2(s.amount)}</span></div>`).join('')
-    : `<p class="section-note" style="text-align:left">No recurring charges found this period.</p>`;
+  if (!subs.length) {
+    $('subList').innerHTML = `
+      <div class="empty-frame">
+        <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+        </svg>
+        <p class="empty-title">No recurring charges this period.</p>
+        <p class="empty-copy">Either you're not subscribed to much — or the statement window is too short to detect a monthly rhythm.</p>
+      </div>`;
+    return;
+  }
+  $('subList').innerHTML = subs.map(s => `
+    <div class="sub-row"><span>${s.name}</span>${s.count>1?`<span class="ct">×${s.count}</span>`:''}<span class="amt num">${fmt2(s.amount)}</span></div>`).join('');
 }
 
 function renderMerchants(merchants) {
