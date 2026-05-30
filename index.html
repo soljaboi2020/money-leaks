@@ -88,7 +88,7 @@
       </div>
     </div>
 
-    <p class="intake-foot">
+    <p class="intake-foot" id="privacy">
       <span class="lock" aria-hidden="true"></span>
       Your data never leaves this device.
       <button id="tryDemo" class="text-link">Try a sample statement&nbsp;→</button>
@@ -117,6 +117,17 @@
         <div class="leak-line"><span class="k">Orders after 9PM</span><span class="v num">19</span></div>
       </div>
       <p class="leak-source">Primary source · <b>Uber Eats</b></p>
+      <!-- zero-click sandbox: the same "What If" slider that ships on the
+           real results page, hardcoded to the $487 mock so visitors get the
+           hook before they upload anything. data-hourly=15.71 ≈ $487/31hrs. -->
+      <div class="whatif" data-amt="487" data-hourly="15.71">
+        <div class="whatif-head">
+          <span class="whatif-label">If you cut this by</span>
+          <span class="whatif-val num" data-role="pct">50%</span>
+        </div>
+        <input class="whatif-slider" type="range" min="0" max="100" value="50" step="5" aria-label="reduction percentage">
+        <p class="whatif-result" data-role="result"></p>
+      </div>
     </article>
   </div>
 
@@ -264,8 +275,20 @@
 </div>
 
 <footer class="footer wrap">
-  <span>Money Leaks</span>
-  <span>100% client-side · your bank data never touches a server</span>
+  <div class="foot-brand">
+    <span class="wordmark">Money&thinsp;Leaks</span>
+    <span class="foot-tag">100% client-side. Your bank data never touches a server.</span>
+  </div>
+  <ul class="foot-links">
+    <li><a href="https://github.com/soljaboi2020/money-leaks" target="_blank" rel="noopener">Source</a></li>
+    <li><a href="https://github.com/soljaboi2020/money-leaks/blob/main/script.js" target="_blank" rel="noopener">View JS</a></li>
+    <li><a href="#privacy">Privacy</a></li>
+    <li><a href="https://builtbymalachi.com" target="_blank" rel="noopener">Built by Malachi</a></li>
+  </ul>
+  <div class="foot-stamp">
+    <span class="foot-label">Last updated</span>
+    <span id="lastUpdated" class="num">—</span>
+  </div>
 </footer>
 
 <script src="script.js"></script>

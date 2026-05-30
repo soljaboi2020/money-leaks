@@ -692,10 +692,13 @@ function syncWhatif(wif) {
   wif.querySelector('[data-role="result"]').innerHTML = formatWhatif(amt, hourly, pct);
 }
 function initWhatifAll() {
-  document.querySelectorAll('#leakCards .whatif').forEach(syncWhatif);
+  // every .whatif anywhere on the page — the results grid AND the landing
+  // preview card both get initialized through the same code path
+  document.querySelectorAll('.whatif').forEach(syncWhatif);
 }
-// delegated — survives every re-render of #leakCards
-$('leakCards').addEventListener('input', (e) => {
+// delegated at document so it catches BOTH the landing preview slider
+// and every dynamically-rendered slider inside the results grid
+document.addEventListener('input', (e) => {
   if (e.target.classList && e.target.classList.contains('whatif-slider')) {
     syncWhatif(e.target.closest('.whatif'));
   }
@@ -752,4 +755,21 @@ function initReturning() {
   el.hidden = false;
   el.innerHTML = `Last analyzed · <b class="num">${fmt(last)}</b> across ${period}. Drop another statement to extend the trend.`;
 }
+
+/* ---- Footer "Last updated" stamp ----
+   document.lastModified reflects the file's Last-Modified header, which on
+   Vercel = the deploy time. Real metadata, no build step needed. */
+function initFooterStamp() {
+  const el = $('lastUpdated');
+  if (!el) return;
+  const d = new Date(document.lastModified);
+  if (isNaN(d)) return;
+  el.textContent = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// run on initial page load — landing preview slider needs its result text
+// computed immediately, the returning-user line reads localStorage, and the
+// footer stamp reads document.lastModified
+initWhatifAll();
 initReturning();
+initFooterStamp();
