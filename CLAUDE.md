@@ -89,10 +89,9 @@
   no SSH host key for github.com, so first push used HTTPS with `gh auth token` inline (token NOT
   stored in remote URL — one-shot for the initial push). Local git identity set via
   `git config --local` (per master rule: never touch global git config).
-- ⏳ **Vercel import — needs Malachi.** Vercel can't auto-import a new repo without his OAuth
-  approval. He goes to https://vercel.com/new → import `soljaboi2020/money-leaks` → leave all
-  defaults (Other framework, no build cmd, output dir `./`) → Deploy. After that, every push to
-  `main` auto-deploys (Rule #5). Default URL: `money-leaks-<hash>.vercel.app` or `money-leaks.vercel.app`.
+- ✅ **2026-05-30 — Vercel import done.** Live at **https://money-leaks.vercel.app/** (HTTP 200,
+  served from a Vercel edge, x-vercel-cache HIT). Auto-deploy on push to `main` is wired —
+  confirmed the polish-pass commit (717f4d5) is what's serving, not the initial commit.
 - ⚠️ Future Claude pushes need the same inline-token pattern (`gh auth setup-git` can't persist to
   `/root/.gitconfig` — "Device or resource busy"). Use:
   `TOKEN=$(gh auth token); git push "https://x-access-token:${TOKEN}@github.com/soljaboi2020/money-leaks.git" main; unset TOKEN`

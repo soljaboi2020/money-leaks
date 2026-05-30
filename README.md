@@ -2,6 +2,8 @@
 
 **Where did your money *actually* go?**
 
+🟢 **Live:** [money-leaks.vercel.app](https://money-leaks.vercel.app/)
+
 Drop in a bank-statement CSV and instantly see the truth: your total, in hours of work, the categories, the merchants you keep visiting, the subscriptions quietly draining you, and your biggest "money leaks."
 
 ## Why it's different
@@ -15,7 +17,7 @@ Drop in a bank-statement CSV and instantly see the truth: your total, in hours o
 3. (Optional) Add a free [Gemini API key](https://aistudio.google.com/apikey) in ⚙️ AI Setup for smarter insights + 🔥 roast mode.
 
 ## Stack
-Vanilla HTML/CSS/JS · Tailwind (CDN) · PapaParse (CSV) · Chart.js · Google Gemini Flash (optional, bring-your-own-key). No backend, no build step.
+Vanilla HTML/CSS/JS · handcrafted editorial CSS system (no utility framework) · PapaParse (CSV) · Chart.js · Google Gemini Flash (optional, bring-your-own-key). No backend, no build step.
 
 ## Run locally
 ```bash
