@@ -448,3 +448,110 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 /* primary merchant line in leak cards — same treatment */
 .leak-source { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* =========================================================================
+   FEATURE LAYER — added 2026-05-30
+   "What If" slider on each leak card · Recategorize picker · Returning user.
+   Still editorial: hairline tracks, muted colors, restrained spacing.
+   ========================================================================= */
+
+/* ---- returning-user line on the landing (quiet, italic, under the lede) ---- */
+.returning {
+  margin-top: var(--s-3);
+  font-size: .88rem;
+  color: var(--ink-faint);
+  font-style: italic;
+  letter-spacing: .005em;
+}
+.returning b { color: var(--ink-dim); font-style: normal; font-weight: 500; }
+
+/* ---- "What If" slider — bottom of each leak card ---- */
+.whatif {
+  margin-top: var(--s-2);
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--hair-soft);
+  display: flex; flex-direction: column; gap: .55rem;
+}
+.whatif-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: .78rem; color: var(--ink-faint); letter-spacing: .02em;
+}
+.whatif-val { color: var(--ink); font-weight: 600; font-size: .9rem; }
+
+/* editorial range input — 1px track, small ink-colored thumb, no fill bar
+   (a colored fill bar reads as "progress" which would be the wrong metaphor) */
+.whatif-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 2px;
+  background: var(--hair); border-radius: 1px;
+  outline: none; cursor: pointer; padding: 0;
+}
+.whatif-slider:focus { background: var(--hair-soft); }
+.whatif-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--ink); border: 1px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--hair);
+  cursor: grab; transition: transform .15s;
+}
+.whatif-slider:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.1); }
+.whatif-slider::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--ink); border: 1px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--hair);
+  cursor: grab;
+}
+.whatif-slider::-moz-range-track { background: var(--hair); height: 2px; border-radius: 1px; }
+.whatif-result {
+  font-size: .82rem;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+.whatif-result b { color: var(--ink); font-weight: 600; }
+
+/* ---- Recategorize: clickable pill on each merchant row ---- */
+.m-cat {
+  display: inline-block;
+  padding: .18rem .55rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--hair-soft);
+  color: var(--ink-dim);
+  font-size: .68rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase;
+  line-height: 1;
+  font-family: inherit; cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.m-cat:hover { color: var(--ink); border-color: var(--ink-faint); }
+.m-cat:focus { outline: none; border-color: var(--green); color: var(--ink); }
+/* inline echo of the current category in the modal copy line */
+.m-cat-inline {
+  display: inline-block; padding: .12rem .45rem; border-radius: 999px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--hair-soft);
+  font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-dim); margin: 0 .2rem;
+}
+
+/* ---- Recategorize modal grid of category options ---- */
+.recat-grid {
+  margin-top: var(--s-3);
+  display: grid; grid-template-columns: 1fr 1fr; gap: .5rem;
+}
+.recat-opt {
+  text-align: left;
+  padding: .65rem .8rem;
+  border: 1px solid var(--hair);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: inherit; font-size: .88rem;
+  cursor: pointer;
+  transition: border-color .2s, background .2s, color .2s, transform .15s;
+}
+.recat-opt:hover {
+  border-color: var(--green);
+  background: rgba(111,169,140,.05);
+}
+.recat-opt:active { transform: translateY(1px); }
+@media (max-width: 480px){ .recat-grid { grid-template-columns: 1fr; } }

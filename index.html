@@ -45,6 +45,7 @@
       Upload last month's statement and the leaks surface in seconds — the quiet
       habits, the invisible drains, <span class="emph">the number you didn't expect.</span>
     </p>
+    <p class="returning" id="returningLine" hidden></p>
   </div>
 
   <div class="intake">
@@ -65,7 +66,7 @@
     </div>
 
     <div id="dropzone" class="dropzone">
-      <input id="fileInput" type="file" accept=".csv,text/csv" hidden />
+      <input id="fileInput" type="file" accept=".csv,text/csv" multiple hidden />
       <div id="dzIdle" class="dz-idle">
         <svg class="dz-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 16V7m0 0-3.2 3.2M12 7l3.2 3.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -74,7 +75,7 @@
         <p class="dz-title">Drop your statement</p>
         <span class="dz-file">CHASE_OCT_2024.csv</span>
         <div class="dz-meta">
-          <span>Secure, local analysis</span><span class="dot"></span><span>~4 seconds</span>
+          <span>One file or several</span><span class="dot"></span><span>Local analysis</span><span class="dot"></span><span>~4 seconds</span>
         </div>
       </div>
       <div id="dzBusy" class="dz-busy" hidden>
@@ -232,6 +233,22 @@
       <button id="clearKey" class="ghost-btn">Clear</button>
     </div>
     <p id="keyStatus" class="micro"></p>
+  </div>
+</div>
+
+<!-- ===== RECATEGORIZE MODAL ===== -->
+<div id="recatModal" class="modal" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Reassign category</h3>
+      <button id="recatClose" class="x" aria-label="Close">×</button>
+    </div>
+    <p class="modal-copy">
+      Move <b id="recatMerchant">this merchant</b> from
+      <span id="recatCurrent" class="m-cat-inline"></span>
+      to a different category. Your choice is remembered — future statements will use it.
+    </p>
+    <div class="recat-grid" id="recatGrid"></div>
   </div>
 </div>
 

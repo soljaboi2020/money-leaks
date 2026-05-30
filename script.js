@@ -13,6 +13,8 @@ const LS = {
   key: 'ml_gemini_key',
   rules: 'ml_learned_rules',
   lastTotal: 'ml_last_total',
+  lastPeriod: 'ml_last_period',
+  lastAt: 'ml_last_at',
   catHist: 'ml_cat_hist',
 };
 
@@ -29,6 +31,15 @@ const CATEGORY_RULES = [
   ['Bills & Utilities', ['at&t','verizon','t-mobile','comcast','xfinity','spectrum','cox comm','electric','water util','gas company','pg&e','duke energy','insurance','geico','progressive','state farm','allstate','rent','mortgage','student loan']],
   ['Entertainment', ['steam','playstation','xbox','nintendo','epic games','riot','roblox','twitch','amc theat','cinemark','regal','ticketmaster','stubhub','live nation','fandango']],
   ['Cash & Transfers', ['venmo','cash app','cashapp','zelle','paypal','withdrawal','atm','wire transfer']],
+];
+
+// Canonical category list used by the recategorize picker.
+// Order matters: most-edited categories near the top.
+const CATEGORIES = [
+  'Takeout & Delivery', 'Restaurants', 'Coffee', 'Groceries',
+  'Subscriptions', 'Shopping', 'Entertainment',
+  'Transport', 'Bills & Utilities', 'Health & Fitness',
+  'Cash & Transfers', 'Other',
 ];
 
 function getLearnedRules() { try { return JSON.parse(localStorage.getItem(LS.rules)) || {}; } catch { return {}; } }
@@ -72,10 +83,17 @@ function cleanMerchant(desc) {
 let RAW_ROWS = [];
 let HEADERS = [];
 
-function beginIntake(file) {
-  $('dzFileName').textContent = file.name || 'statement.csv';
+function beginIntake(files) {
+  // accept a File or a FileList/array. The busy state shows the first name
+  // and a count for the rest ("CHASE_OCT.csv + 2 more")
+  const arr = files instanceof File ? [files] : Array.from(files || []);
+  const csv = arr.filter(f => /\.csv$/i.test(f.name));
+  if (!csv.length) { alert('Please drop a CSV file exported from your bank.'); return; }
+  const label = csv.length === 1 ? csv[0].name
+              : `${csv[0].name} + ${csv.length - 1} more`;
+  $('dzFileName').textContent = label;
   $('dzIdle').hidden = true; $('dzBusy').hidden = false;
-  runBusy(() => handleFile(file));
+  runBusy(() => handleFiles(csv));
 }
 
 // progress bar fill -> green checkmark -> reveal. Feels intentional, not a flicker.
@@ -92,17 +110,38 @@ function resetIntake() {
   $('progressBar').classList.remove('run'); $('dzCheck').hidden = true;
 }
 
-function handleFile(file) {
-  Papa.parse(file, {
-    header: true, skipEmptyLines: true,
-    complete: (res) => {
-      RAW_ROWS = res.data; HEADERS = res.meta.fields || [];
-      const guess = guessColumns(HEADERS);
-      if (guess.date && guess.desc && guess.amount) buildAnalysis(guess);
-      else showMapper(guess);
-    },
-    error: () => alert('Could not read that file. Make sure it is a CSV exported from your bank.')
+function parseOne(file) {
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      header: true, skipEmptyLines: true,
+      complete: (res) => resolve({ rows: res.data, headers: res.meta.fields || [] }),
+      error: reject,
+    });
   });
+}
+
+// Multi-file pipeline. Parses every CSV in parallel, dedupes identical rows
+// (overlap between monthly statements is common), uses the first file's
+// headers for column detection — same-bank statements share a schema.
+function handleFiles(files) {
+  Promise.all(files.map(parseOne)).then(results => {
+    const allRows = []; const seen = new Set();
+    let headers = null;
+    for (const r of results) {
+      if (!headers && r.headers.length) headers = r.headers;
+      for (const row of r.rows) {
+        // crude exact-dupe key — handles re-downloaded overlaps cleanly
+        const key = JSON.stringify(row);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        allRows.push(row);
+      }
+    }
+    RAW_ROWS = allRows; HEADERS = headers || [];
+    const guess = guessColumns(HEADERS);
+    if (guess.date && guess.desc && guess.amount) buildAnalysis(guess);
+    else showMapper(guess);
+  }).catch(() => alert('Could not read one of those files. Make sure each is a CSV exported from your bank.'));
 }
 
 function guessColumns(headers) {
@@ -129,6 +168,9 @@ $('mapApply').onclick = () => { $('mapper').hidden = true; buildAnalysis({ date:
 
 /* ----------------------------- THE ANALYSIS ---------------------------- */
 let MODEL = null;
+// the column mapping from the most recent run — kept so the recategorize
+// picker can re-run buildAnalysis without re-parsing the CSV(s)
+let LAST_COLS = null;
 
 function parseAmount(v) {
   if (v == null) return 0;
@@ -137,6 +179,7 @@ function parseAmount(v) {
 }
 
 function buildAnalysis(cols) {
+  LAST_COLS = cols;
   const txns = [];
   for (const row of RAW_ROWS) {
     const desc = row[cols.desc];
@@ -173,6 +216,9 @@ function buildAnalysis(cols) {
   const dailySeries = buildDailySeries(txns);
   const dates = txns.filter(t=>t.date).map(t=>t.date).sort((a,b)=>a-b);
   const period = dates.length ? `${dates[0].toLocaleDateString('en-US',{month:'long',day:'numeric'})} – ${dates[dates.length-1].toLocaleDateString('en-US',{month:'long',day:'numeric'})}` : 'This period';
+  // returning-user breadcrumb — read by initReturningLine() on next page load
+  localStorage.setItem(LS.lastPeriod, period);
+  localStorage.setItem(LS.lastAt, String(Date.now()));
 
   MODEL = { total, txns, txnCount: txns.length, cats, merchants, hourly, hoursOf,
             subs, subMonthly, prevCats, prevTotal, dailySeries, period };
@@ -397,6 +443,16 @@ function renderLeakCards(cards) {
     const hrs = c.hours != null
       ? `<div class="leak-line"><span class="k">Hours of work <span class="info" tabindex="0" data-tip="Your ${c.cat} spending ÷ your hourly take-home pay.">i</span></span><span class="v num">${c.hours}</span></div>`
       : '';
+    const whatif = `
+      <div class="whatif" data-amt="${c.amt}" data-hourly="${MODEL && MODEL.hourly ? MODEL.hourly : ''}">
+        <div class="whatif-head">
+          <span class="whatif-label">If you cut this by</span>
+          <span class="whatif-val num" data-role="pct">50%</span>
+        </div>
+        <input class="whatif-slider" type="range" min="0" max="100" value="50" step="5"
+               aria-label="${c.cat} reduction percentage">
+        <p class="whatif-result" data-role="result"></p>
+      </div>`;
     return `
     <article class="leak sev-${c.severity}">
       <div class="leak-top">
@@ -411,8 +467,10 @@ function renderLeakCards(cards) {
         <div class="leak-line"><span class="k">${c.detail.k}</span><span class="v num">${c.detail.v}</span></div>
       </div>
       ${c.primary ? `<p class="leak-source">Primary source · <b>${c.primary}</b></p>` : ''}
+      ${whatif}
     </article>`;
   }).join('');
+  initWhatifAll();
 }
 
 function renderCatList(cats, total) {
@@ -445,7 +503,15 @@ function renderSubs(subs, monthly) {
 
 function renderMerchants(merchants) {
   $('merchantList').innerHTML = merchants.slice(0, 8).map(m => `
-    <div class="merch-row"><span>${m.name}</span><span class="ct">×${m.count}</span><span class="amt num">${fmt(m.amount)}</span></div>`).join('');
+    <div class="merch-row">
+      <span>${m.name}</span>
+      <button class="m-cat" type="button"
+        data-merchant="${encodeURIComponent(m.name)}"
+        data-cat="${encodeURIComponent(m.cat)}"
+        title="Reassign ${m.name} to a different category">${m.cat}</button>
+      <span class="ct">×${m.count}</span>
+      <span class="amt num">${fmt(m.amount)}</span>
+    </div>`).join('');
 }
 
 function renderInsights(list, mode) {
@@ -554,10 +620,10 @@ function drawShareCard() {
 /* -------------------------------- EVENTS -------------------------------- */
 const dz = $('dropzone'), fi = $('fileInput');
 dz.onclick = () => fi.click();
-fi.onchange = (e) => e.target.files[0] && beginIntake(e.target.files[0]);
+fi.onchange = (e) => e.target.files.length && beginIntake(e.target.files);
 ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('dragging'); }));
 ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('dragging'); }));
-dz.addEventListener('drop', e => e.dataTransfer.files[0] && beginIntake(e.dataTransfer.files[0]));
+dz.addEventListener('drop', e => e.dataTransfer.files.length && beginIntake(e.dataTransfer.files));
 
 $('tryDemo').onclick = (e) => { e.stopPropagation(); loadDemo(); };
 $('navSample').onclick = () => { if (!$('landing').hidden) loadDemo(); };
@@ -601,3 +667,89 @@ function loadDemo() {
   runBusy(() => Papa.parse(csv, { header:true, skipEmptyLines:true, complete:(res)=>{ RAW_ROWS=res.data; HEADERS=res.meta.fields;
     buildAnalysis({date:'Date',desc:'Description',amount:'Amount'}); } }));
 }
+
+/* ============================================================================
+   ENHANCEMENTS — "What if" slider · recategorize picker · returning-user line
+   Appended 2026-05-30. All client-side, stays in the editorial direction.
+   ============================================================================ */
+
+/* ---- "What if I cut this?" slider on each Leak Card ----
+   Pure math, computed from c.amt + (MODEL.hourly if known). The slider lets
+   the user discover the actionable layer beneath each forensic observation. */
+function formatWhatif(amt, hourly, pct) {
+  const savings = amt * (pct / 100);
+  const yearly  = savings * 12;
+  const hoursTxt = hourly ? ` · <b class="num">${Math.round(savings / hourly)}</b> hrs of work` : '';
+  return `Recover <b class="num">${fmt(savings)}</b> this period · about <b class="num">${fmt(yearly)}</b> a year${hoursTxt}.`;
+}
+function syncWhatif(wif) {
+  if (!wif) return;
+  const slider = wif.querySelector('.whatif-slider');
+  const pct    = parseInt(slider.value, 10);
+  const amt    = parseFloat(wif.dataset.amt);
+  const hourly = parseFloat(wif.dataset.hourly) || null;
+  wif.querySelector('[data-role="pct"]').textContent = pct + '%';
+  wif.querySelector('[data-role="result"]').innerHTML = formatWhatif(amt, hourly, pct);
+}
+function initWhatifAll() {
+  document.querySelectorAll('#leakCards .whatif').forEach(syncWhatif);
+}
+// delegated — survives every re-render of #leakCards
+$('leakCards').addEventListener('input', (e) => {
+  if (e.target.classList && e.target.classList.contains('whatif-slider')) {
+    syncWhatif(e.target.closest('.whatif'));
+  }
+});
+
+/* ---- Recategorize picker ----
+   Click any merchant's category pill -> modal lists the other categories ->
+   pick one -> saveLearnedRule() persists it -> buildAnalysis(LAST_COLS)
+   re-runs over RAW_ROWS so every transaction from that merchant moves at once. */
+function openRecat(merchant, currentCat) {
+  if (!LAST_COLS) return; // can't re-analyze without column mapping
+  $('recatMerchant').textContent = merchant;
+  $('recatCurrent').textContent  = currentCat;
+  const grid = $('recatGrid');
+  grid.innerHTML = CATEGORIES
+    .filter(c => c !== currentCat)
+    .map(c => `<button class="recat-opt" type="button" data-cat="${encodeURIComponent(c)}">${c}</button>`)
+    .join('');
+  $('recatModal').hidden = false;
+}
+function closeRecat() { $('recatModal').hidden = true; }
+function applyRecat(merchant, newCat) {
+  // remember the merchant string (lowercased) -> category. categorize() reads
+  // learned rules first, so this beats the dictionary on every future run.
+  saveLearnedRule(merchant.toLowerCase(), newCat);
+  closeRecat();
+  buildAnalysis(LAST_COLS);
+}
+
+// merchant-pill click delegation — merchant list re-renders, the listener stays
+$('merchantList').addEventListener('click', (e) => {
+  const btn = e.target.closest('.m-cat');
+  if (!btn) return;
+  openRecat(decodeURIComponent(btn.dataset.merchant), decodeURIComponent(btn.dataset.cat));
+});
+// recat modal handlers
+$('recatClose').onclick = closeRecat;
+$('recatModal').addEventListener('click', (e) => { if (e.target === $('recatModal')) closeRecat(); });
+$('recatGrid').addEventListener('click', (e) => {
+  const btn = e.target.closest('.recat-opt');
+  if (!btn) return;
+  applyRecat($('recatMerchant').textContent, decodeURIComponent(btn.dataset.cat));
+});
+
+/* ---- Returning-user breadcrumb on the landing ----
+   Reads ml_last_total + ml_last_period saved at the end of buildAnalysis.
+   First-time users see nothing; returning users see a quiet line under the
+   lede inviting them to add another month. */
+function initReturning() {
+  const last = parseFloat(localStorage.getItem(LS.lastTotal));
+  const period = localStorage.getItem(LS.lastPeriod);
+  if (!last || !period) return;
+  const el = $('returningLine');
+  el.hidden = false;
+  el.innerHTML = `Last analyzed · <b class="num">${fmt(last)}</b> across ${period}. Drop another statement to extend the trend.`;
+}
+initReturning();
