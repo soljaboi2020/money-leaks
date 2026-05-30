@@ -386,8 +386,8 @@ function renderLeakCards(cards) {
         <path d="M4 12h16M4 12l4-4M4 12l4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>
         <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.25" opacity=".25"/>
       </svg>
-      <p class="empty-title">Nothing surfaced.</p>
-      <p class="empty-copy">No clear patterns this period. Either the spending was disciplined, or the statement is too short to read a story.</p>`;
+      <p class="empty-title">No structural leaks identified.</p>
+      <p class="empty-copy">Spending distributes evenly across categories this period — no single drain dominates. Either the account is being run with discipline, or the statement window is too narrow to surface a pattern.</p>`;
     return;
   }
   el.classList.remove('is-empty');
@@ -434,8 +434,8 @@ function renderSubs(subs, monthly) {
         <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 7h16M4 12h16M4 17h10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
         </svg>
-        <p class="empty-title">No recurring charges this period.</p>
-        <p class="empty-copy">Either you're not subscribed to much — or the statement window is too short to detect a monthly rhythm.</p>
+        <p class="empty-title">No recurring monthly charges detected.</p>
+        <p class="empty-copy">The account isn't tied to standing subscription commitments — or the statement window is too narrow to confirm a billing cycle.</p>
       </div>`;
     return;
   }

@@ -432,3 +432,19 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .empty-title { font-family: var(--serif); font-style: italic; font-size: 1.1rem; color: var(--ink); }
 .empty-copy  { font-size: .88rem; color: var(--ink-dim); max-width: 32em; line-height: 1.55; }
 .empty-cta   { margin-top: var(--s-2); }
+
+/* ---- TEXT TRUNCATION — long merchant strings fade to … instead of breaking layout
+   (e.g. "AMZN MKTP US*BR2938491"). All rows are flex/grid; flex/grid children need
+   min-width: 0 to drop below their intrinsic min-content width. The grid version
+   also needs minmax(0, 1fr) for the column to allow shrinking. */
+.cat-row { grid-template-columns: minmax(0, 1fr) auto; }
+.cat-row .cat-name,
+.sub-row > span:first-child,
+.merch-row > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* primary merchant line in leak cards — same treatment */
+.leak-source { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
